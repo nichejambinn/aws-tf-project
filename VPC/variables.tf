@@ -1,28 +1,8 @@
-variable "vpc_cidr" {
-  type = string
-}
+variable "vpc-shared_cidr" { type = string }
+variable "vpc-dev_cidr" { type = string  }
 
-variable "vpc_name" {
-  type = string
-}
-
-variable "counter" {
-  type = number
-  default = 1
-  description = "Number of public and private subnets"
-}
-
-variable "public_cidrs" {
-  type = list(any)
-}
-
-variable "private_cidrs" {
-  type = list(any)
-}
-
-variable "environment_name" {
-  type = string
-}
+variable "vpc-shared_environment_name" { type = string }
+variable "vpc-dev_environment_name" { type = string }
 
 variable "default_tags" {
   default = {
