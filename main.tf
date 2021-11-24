@@ -14,7 +14,7 @@ provider "aws" {
 }
 
 # create VPC-Dev and subnets
-module "networking_VPC-Dev" {
+module "networking_VPC_Dev" {
   source = "./VPC"
   vpc_env = "Dev"
   vpc_cidr = "192.168.0.0/16"
@@ -23,8 +23,16 @@ module "networking_VPC-Dev" {
   counter = 2
 }
 
+# add Bastion host to public subnet
+module "bastion_VPC_Dev" {
+  source = "./EC2"
+  vpc_env = "Dev"
+  vpc_id = module.networking_VPC_Dev.vpc_id
+  public_subnet_id = module.networking_VPC_Dev.public_subnets[0].id
+}
+
 # create VPC-Shared and subnets
-module "networking_VPC-Shared" {
+module "networking_VPC_Shared" {
   source = "./VPC"
   vpc_env = "Shared"
   vpc_cidr = "10.0.0.0/16"
