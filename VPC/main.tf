@@ -1,108 +1,128 @@
-#------VPC------
-resource "aws_vpc" "vpc-jenkins" {
-  cidr_block = var.vpc-jenkins_cidr
+# AZ data source
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
+# VPC
+resource "aws_vpc" "vpc-tf" {
+  cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
-  enable_dns_support = true
-  tags = map(
-    var.default_tags, 
-    {
-      Environment = var.vpc-jenkins_environment_name
-    }
-  )
-}
-
-# Attach Internet Gateway to VPC-Jenkins
-resource "aws_igw" "vpc-jenkins_igw"{
-  vpc_id = aws_vpc.vpc-jenkins.id
-  tags = map(
-    var.default_tags
-  )
-}
-
-#Define subnets for VPC-Jenkins
-module "subnet" {
-  source = "../Subnet"
-  for_each = {
-    Public_SN1  = {
-      cidr = "10.0.1.0/24"
-      is_private = false
-      availability_zone = "us-east-1a"}
-    Public_SN2  = {
-      cidr = "10.0.2.0/24",
-      is_private = false
-      availability_zone = "us-east-1a"}
-    Private_SN1 = {
-      cidr = "10.0.3.0/24" 
-      is_private = true
-      availability_zone = "us-east-1b"}
-    Private_SN2 = {
-      cidr = "10.0.4.0/24" 
-      is_private = true
-      availability_zone = "us-east-1b"}
-  }
-  vpc_id = aws_vpc.vpc-jenkins.id
-  subnet_name = each.key
-  availability_zone = each.value.availability_zone
-  cidr_block = each.value.cidr
-  is_private = each.value.is_private
-  environment_tag = var.vpc-jenkins_environment_name
-}
-
-# Define VPC Dev
-resource "aws_vpc" "vpc-dev" {
-  cidr_block = var.vpc-dev_cidr
-  enable_dns_hostnames = true
-  enable_dns_support = true
-  tags = map(
+  enable_dns_support   = true
+  tags = merge(
     var.default_tags,
     {
-      Environment = var.vpc-dev_environment_name
+      Name = "VPC-${var.vpc_env}"
+      Environment = "${var.vpc_env}"
     }
   )
 }
 
-# Attach Internet Gateway to VPC-Dev
-resource "aws_igw" "vpc-dev_igw"{
-  vpc_id = aws_vpc.vpc-dev.id
-  tags = map(
-    var.default_tags
+# Internet Gateway
+resource "aws_internet_gateway" "igw" {
+  vpc_id = aws_vpc.vpc-tf.id
+  tags = merge(
+    var.default_tags,
+    {
+      Name = "VPC-${var.vpc_env}-IGW"
+      Environment = "${var.vpc_env}"
+    }
   )
 }
 
-# Define subnets for VPC-Dev
-module "subnet" {
-  source = "../Subnet"
-  for_each = {
-    Public_SN1 = {
-      cidr = "192.168.1.0/24"
-      is_private = false
-      availability_zone = "us-east-1a"
+# private subnets
+resource "aws_subnet" "private" {
+  vpc_id            = aws_vpc.vpc-tf.id
+  count             = var.counter
+  availability_zone = data.aws_availability_zones.available.names[count.index]
+  cidr_block        = var.private_cidrs[count.index]
+
+  tags = merge(
+    var.default_tags,
+    {
+      Name = "VPC-${var.vpc_env}-Private_SN${count.index + 1}"
+      Environment = "${var.vpc_env}"
     }
-    Public_SN2 = {
-      cidr = "192.168.2.0/24"
-      is_private = false
-      availability_zone = "us-east-1b"
+  )
+}
+
+# public subnets
+resource "aws_subnet" "public" {
+  vpc_id            = aws_vpc.vpc-tf.id
+  count             = var.counter
+  availability_zone = data.aws_availability_zones.available.names[count.index]
+  cidr_block        = var.public_cidrs[count.index]
+
+  tags = merge(
+    var.default_tags,
+    {
+      Name = "VPC-${var.vpc_env}-Public_SN${count.index + 1}"
+      Environment = "${var.vpc_env}"
     }
-    Private_SN1 = {
-      cidr = "192.168.3.0/24"
-      is_private = true 
-      availability_zone = "us-east-1a"
+  )
+}
+
+# Elastic IP
+resource "aws_eip" "nat-eip" {
+  vpc = true
+}
+
+# NAT GW
+resource "aws_nat_gateway" "nat" {
+  allocation_id = aws_eip.nat-eip.id
+  subnet_id     = aws_subnet.public[1].id
+
+  tags = merge(
+    var.default_tags,
+    {
+      Name = "VPC-${var.vpc_env}-NAT-GW"
+      Environment = "${var.vpc_env}"
     }
-    Private_SN2 = {
-      cidr = "192.168.4.0/24"
-      is_private = true 
-      availability_zone = "us-east-1b"
-    }
+  )
+}
+
+# public route table
+resource "aws_route_table" "rt-public" {
+  vpc_id = aws_vpc.vpc-tf.id
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
   }
-  vpc_id = aws_vpc.vpc-dev.id
-  subnet_name = each.key
-  availability_zone = each.value.availability_zone
-  cidr_block = each.value.cidr
-  is_private = each.value.is_private
-  environment_tag = var.vpc-dev_environment_name
+  
+  tags = merge(
+    var.default_tags,
+    {
+      Name = "VPC-${var.vpc_env}-Public_RT"
+      Environment = "${var.vpc_env}"
+    }
+  )
 }
 
-#------Routing Table------
-# TODO: Attach public routing table
-# TODO: Configure Default Route for routing table
-# TODO: Add Tags to routing table
+# private route table 
+resource "aws_route_table" "rt-private" {
+  vpc_id = aws_vpc.vpc-tf.id
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_nat_gateway.nat.id
+  }
+  
+  tags = merge(
+    var.default_tags,
+    {
+      Name = "VPC-${var.vpc_env}-Private_RT"
+      Environment = "${var.vpc_env}"
+    }
+  )
+}
+
+# associate route tables with subnets
+resource "aws_route_table_association" "association-pub" {
+  count          = var.counter
+  subnet_id      = aws_subnet.public.*.id[count.index]
+  route_table_id = aws_route_table.rt-public.id
+}
+
+resource "aws_route_table_association" "association-pr" {
+  count          = var.counter
+  subnet_id      = aws_subnet.private.*.id[count.index]
+  route_table_id = aws_route_table.rt-private.id
+}
