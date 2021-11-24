@@ -1,7 +1,7 @@
-variable "vpc-shared_cidr" { type = string }
+variable "vpc-jenkins_cidr" { type = string }
 variable "vpc-dev_cidr" { type = string  }
 
-variable "vpc-shared_environment_name" { type = string }
+variable "vpc-jenkins_environment_name" { type = string }
 variable "vpc-dev_environment_name" { type = string }
 
 variable "default_tags" {

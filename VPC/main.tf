@@ -1,25 +1,25 @@
 #------VPC------
-resource "aws_vpc" "vpc-shared" {
-  cidr_block = var.vpc-shared_cidr
+resource "aws_vpc" "vpc-jenkins" {
+  cidr_block = var.vpc-jenkins_cidr
   enable_dns_hostnames = true
   enable_dns_support = true
   tags = map(
     var.default_tags, 
     {
-      Environment = var.vpc-shared_environment_name
+      Environment = var.vpc-jenkins_environment_name
     }
   )
 }
 
-# Attach Internet Gateway to VPC-Shared
-resource "aws_igw" "vpc-shared_igw"{
-  vpc_id = aws_vpc.vpc-shared.id
+# Attach Internet Gateway to VPC-Jenkins
+resource "aws_igw" "vpc-jenkins_igw"{
+  vpc_id = aws_vpc.vpc-jenkins.id
   tags = map(
     var.default_tags
   )
 }
 
-#Define subnets for VPC-Shared
+#Define subnets for VPC-Jenkins
 module "subnet" {
   source = "../Subnet"
   for_each = {
@@ -40,12 +40,12 @@ module "subnet" {
       is_private = true
       availability_zone = "us-east-1b"}
   }
-  vpc_id = aws_vpc.vpc-shared.id
+  vpc_id = aws_vpc.vpc-jenkins.id
   subnet_name = each.key
   availability_zone = each.value.availability_zone
   cidr_block = each.value.cidr
   is_private = each.value.is_private
-  environment_tag = var.vpc-shared_environment_name
+  environment_tag = var.vpc-jenkins_environment_name
 }
 
 # Define VPC Dev
