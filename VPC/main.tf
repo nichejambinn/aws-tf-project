@@ -66,10 +66,10 @@ resource "aws_eip" "nat-eip" {
   vpc = true
 }
 
-# NAT GW
+# NAT GW in last public subnet
 resource "aws_nat_gateway" "nat" {
   allocation_id = aws_eip.nat-eip.id
-  subnet_id     = aws_subnet.public[1].id
+  subnet_id     = var.counter > 0 ? aws_subnet.public[var.counter - 1].id : aws_subnet.public[0].id
 
   tags = merge(
     var.default_tags,
