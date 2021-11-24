@@ -23,14 +23,6 @@ module "networking_VPC_Dev" {
   counter = 2
 }
 
-# add Bastion host to public subnet
-module "bastion_VPC_Dev" {
-  source = "./EC2"
-  vpc_env = "Dev"
-  vpc_id = module.networking_VPC_Dev.vpc_id
-  public_subnet_id = module.networking_VPC_Dev.public_subnets[0].id
-}
-
 # create VPC-Shared and subnets
 module "networking_VPC_Shared" {
   source = "./VPC"
@@ -39,4 +31,12 @@ module "networking_VPC_Shared" {
   public_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
   private_cidrs = ["10.0.3.0/24", "10.0.4.0/24"]
   counter = 2
+}
+
+# add Bastion host to public subnet
+module "servers_VPC_Shared" {
+  source = "./EC2"
+  vpc_env = "Shared"
+  vpc_id = module.networking_VPC_Shared.vpc_id
+  public_subnet_id = module.networking_VPC_Shared.public_subnets[0].id
 }
