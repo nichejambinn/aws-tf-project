@@ -56,7 +56,7 @@ module "bastion_host" {
   key_name                    = "group3admin"
   monitoring                  = true
   vpc_security_group_ids      = [module.bastion_sg.security_group_id]
-  subnet_id                   = var.public_subnet_id
+  subnet_id                   = var.public_subnets[0].id
   associate_public_ip_address = true
   
   tags = merge(
@@ -66,7 +66,6 @@ module "bastion_host" {
       Environment = "${var.vpc_env}"
     }
   )
-
 }
 
 # webserver security group
@@ -83,9 +82,16 @@ module "webserver_sg" {
       from_port   = 22
       to_port     = 22
       protocol    = "tcp"
-      description = "access to webserver from the Bastion host"
-      cidr_blocks = "0.0.0.0/0"
+      description = "ssh access to webserver from the Bastion host"
+      security_groups = [module.bastion_sg.id]
     },
+    {
+      from_port   = 80
+      to_port     = 80
+      protocol    = "tcp"
+      description = "http access to webserver from the Bastion host"
+      security_groups = [module.bastion_sg.id]
+    }
   ]
 
   egress_rules = [
@@ -96,6 +102,30 @@ module "webserver_sg" {
     var.default_tags,
     {
       Name = "VPC-${var.vpc_env}-Webserver-SG"
+      Environment = "${var.vpc_env}"
+    }
+  )
+}
+
+# webservers
+module "webservers" {
+  source  = "terraform-aws-modules/ec2-instance/aws"
+  version = "~> 3.0"
+  count = var.counter
+
+  name                        = "VPC-${var.vpc_env}-VM${count.index + 1}"
+  ami                         = data.aws_ami.ami-amzn2.id
+  instance_type               = "t2.micro"
+  key_name                    = "group3admin"
+  monitoring                  = true
+  vpc_security_group_ids      = [module.webserver_sg.security_group_id]
+  subnet_id                   = var.private_subnets[count.index].id
+  user_data                   = file("user-data/install_apache.sh")
+  
+  tags = merge(
+    var.default_tags,
+    {
+      Name = "VPC-${var.vpc_env}-VM${count.index + 1}"
       Environment = "${var.vpc_env}"
     }
   )

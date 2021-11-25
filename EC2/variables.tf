@@ -7,6 +7,12 @@ variable "vpc_env" {
     type = string 
 }
 
+variable "counter" {
+  type        = number
+  default     = 1
+  description = "The number of public and private subnets"
+}
+
 variable "default_tags" {
   default = {
 
