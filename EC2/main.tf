@@ -91,6 +91,13 @@ module "webserver_sg" {
       protocol    = "tcp"
       description = "http access to webserver from the Bastion host"
       security_groups = [module.bastion_sg.id]
+    },
+    {
+      from_port   = -1
+      to_port     = -1
+      protocol    = "icmp"
+      description = "allow webservers to ping each other"
+      security_groups = [module.webserver_sg.id]
     }
   ]
 
