@@ -1,5 +1,6 @@
 variable "vpc_id" { type = string }
-variable "public_subnet_id" { type = string }
+variable "private_subnets" { type = list(any) }
+variable "public_subnets" { type = list(any) }
 
 variable "vpc_env" { 
     default = "Test"

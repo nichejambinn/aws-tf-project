@@ -33,10 +33,12 @@ module "networking_VPC_Shared" {
   counter = 2
 }
 
-# add Bastion host to public subnet
+# add Bastion host and webservers to VPC-Shared
 module "servers_VPC_Shared" {
   source = "./EC2"
   vpc_env = "Shared"
   vpc_id = module.networking_VPC_Shared.vpc_id
-  public_subnet_id = module.networking_VPC_Shared.public_subnets[0].id
+  public_subnets = module.networking_VPC_Shared.public_subnets
+  private_subnets = module.networking_VPC_Shared.private_subnets
+  counter = 2
 }
