@@ -13,16 +13,6 @@ provider "aws" {
   region  = "us-east-1"
 }
 
-# create VPC-Dev and subnets
-module "networking_VPC_Dev" {
-  source        = "./VPC"
-  vpc_env       = "Dev"
-  vpc_cidr      = "192.168.0.0/16"
-  public_cidrs  = ["192.168.1.0/24", "192.168.2.0/24"]
-  private_cidrs = ["192.168.3.0/24", "192.168.4.0/24"]
-  counter       = 2
-}
-
 # create VPC-Shared and subnets
 module "networking_VPC_Shared" {
   source        = "./VPC"
@@ -41,6 +31,16 @@ module "servers_VPC_Shared" {
   public_subnets  = module.networking_VPC_Shared.public_subnets
   private_subnets = module.networking_VPC_Shared.private_subnets
   counter         = 2
+}
+
+# create VPC-Dev and subnets
+module "networking_VPC_Dev" {
+  source        = "./VPC"
+  vpc_env       = "Dev"
+  vpc_cidr      = "192.168.0.0/16"
+  public_cidrs  = ["192.168.1.0/24", "192.168.2.0/24"]
+  private_cidrs = ["192.168.3.0/24", "192.168.4.0/24"]
+  counter       = 2
 }
 
 # create Peering Connection between VPC-Shared and VPC-Dev
