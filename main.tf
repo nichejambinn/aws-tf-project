@@ -43,6 +43,16 @@ module "networking_VPC_Dev" {
   counter       = 2
 }
 
+# add Bastion host and webservers to VPC-Dev
+module "servers_VPC_Shared" {
+  source          = "./EC2"
+  vpc_env         = "Dev"
+  vpc_id          = module.networking_VPC_Dev.vpc_id
+  public_subnets  = module.networking_VPC_Dev.public_subnets
+  private_subnets = module.networking_VPC_Dev.private_subnets
+  counter         = 2
+}
+
 # create Peering Connection between VPC-Shared and VPC-Dev
 resource "aws_vpc_peering_connection" "vpc_cxn_shared_dev" {
   vpc_id      = module.networking_VPC_Shared.vpc_id # requester

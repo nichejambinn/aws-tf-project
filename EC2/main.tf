@@ -14,19 +14,7 @@ resource "aws_security_group" "bastion_sg" {
   description = "Bastion Security Group"
   vpc_id      = var.vpc_id
 
-  ingress = [
-    {
-      description = "access to Bastion from the internet"
-      from_port = 22
-      to_port = 22
-      protocol = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
-      prefix_list_ids = []
-      security_groups = []
-      ipv6_cidr_blocks = []
-      self = null
-    },
-  ]
+  ingress = []
 
   egress = [
     {
@@ -46,6 +34,26 @@ resource "aws_security_group" "bastion_sg" {
     var.default_tags,
     {
       Name = "VPC-${var.vpc_env}-Bastion-SG"
+      Environment = "${var.vpc_env}"
+    }
+  )
+}
+
+# public ssh ingress to Bastion only in Shared env
+resource "aws_security_group_rule" "ssh_public" {
+  security_group_id = aws_security_group.bastion_sg.id
+  count = (var.vpc_env == "Shared") ? 1 : 0
+  type = "ingress"
+  description = "ssh access to Bastion from the internet"
+  from_port = 22
+  to_port = 22
+  protocol = "tcp"
+  cidr_blocks = ["0.0.0.0/0"]
+
+  tags = merge(
+    var.default_tags,
+    {
+      Name = "VPC-${var.vpc_env}-Bastion-Public-SSH"
       Environment = "${var.vpc_env}"
     }
   )
@@ -102,17 +110,6 @@ resource "aws_security_group" "webserver_sg" {
       prefix_list_ids = []
       ipv6_cidr_blocks = []
       self = null
-    },
-    {
-      description = "allow webservers to ping each other"
-      from_port = -1
-      to_port = -1
-      protocol = "icmp"
-      cidr_blocks = [var.private_subnets[0].cidr_block, var.private_subnets[1].cidr_block]
-      security_groups = []
-      prefix_list_ids = []
-      ipv6_cidr_blocks = []
-      self = null
     }
   ]
 
@@ -134,6 +131,25 @@ resource "aws_security_group" "webserver_sg" {
     var.default_tags,
     {
       Name = "VPC-${var.vpc_env}-Webserver-SG"
+      Environment = "${var.vpc_env}"
+    }
+  )
+}
+
+# webservers can ping each other
+resource "aws_security_group_rule" "ping_private" {
+  security_group_id = aws_security_group.webserver_sg.id
+  type = "ingress"
+  description = "private ping between webservers"
+  from_port = -1
+  to_port = -1
+  protocol = "icmp"
+  source_security_group_id = aws_security_group.webserver_sg.id
+
+  tags = merge(
+    var.default_tags,
+    {
+      Name = "VPC-${var.vpc_env}-Webserver-Private-ICMP"
       Environment = "${var.vpc_env}"
     }
   )
