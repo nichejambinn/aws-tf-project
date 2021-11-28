@@ -49,14 +49,6 @@ resource "aws_security_group_rule" "ssh_public" {
   to_port = 22
   protocol = "tcp"
   cidr_blocks = ["0.0.0.0/0"]
-
-  tags = merge(
-    var.default_tags,
-    {
-      Name = "VPC-${var.vpc_env}-Bastion-Public-SSH"
-      Environment = "${var.vpc_env}"
-    }
-  )
 }
 
 # Bastion host instance
@@ -145,14 +137,6 @@ resource "aws_security_group_rule" "ping_private" {
   to_port = -1
   protocol = "icmp"
   source_security_group_id = aws_security_group.webserver_sg.id
-
-  tags = merge(
-    var.default_tags,
-    {
-      Name = "VPC-${var.vpc_env}-Webserver-Private-ICMP"
-      Environment = "${var.vpc_env}"
-    }
-  )
 }
 
 # webservers
