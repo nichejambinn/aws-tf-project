@@ -61,7 +61,7 @@ resource "aws_vpc_peering_connection" "vpc_cxn_shared_dev" {
 }
 
 # TODO: update route tables to include peered networks
-# !?! see ??? below "the route tables should only allow permitted ping"
+# !?! see ??? and: "the route tables should not have rules that..." (doc)
 
 # TODO: update Shared Bastion host SG to ssh into Dev
 
