@@ -61,12 +61,13 @@ resource "aws_vpc_peering_connection" "vpc_cxn_shared_dev" {
 }
 
 # TODO: update route tables to include peered networks
-# !?! see ??? and: "the route tables should not have rules that..." (doc)
+# only the cidr range for the subnets containig the permitted instances should be routed
 
 # TODO: update Shared Bastion host SG to ssh into Dev
+# this is optional, but there should be some way to reach the Dev Bastion imo
 
 # TODO: create SG where VM-Shared-2 and VM-Dev-1 can ping each other
-# ??? this is only a 'partial soln'
+# this combines with the 
 
 # TODO: create S3 bucket and store an image in it
 
