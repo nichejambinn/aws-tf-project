@@ -69,6 +69,14 @@ resource "aws_vpc_peering_connection" "vpc_cxn_shared_dev" {
 # ??? this is only a 'partial soln'
 
 # TODO: create S3 bucket and store an image in it
+resource "aws_s3_bucket" "final_project" {
+  bucket = "final_project_bucket"
+  acl    = "private"
+
+  tags = {
+    Name = "Bucket_Final_Project"
+  }
+}
 
 # TODO: create an IAM role to access the bucket
 
