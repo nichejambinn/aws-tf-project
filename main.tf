@@ -74,7 +74,8 @@ resource "aws_s3_bucket" "final_project" {
   acl    = "private"
 
   tags = {
-    Name = "Bucket_Final_Project"
+    Name        = "Bucket_Final_Project"
+    Environment = "Dev"
   }
 }
 
