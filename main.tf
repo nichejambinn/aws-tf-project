@@ -115,5 +115,31 @@ resource "aws_iam_policy" "final_project_access_bucket" {
   EOF
 }
 
+resource "aws_iam_role" "VM-Shared-1-role" {
+  name = "VM-Shared-1-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          sevice = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
 
-# TODO: attach the IAM role to VM-Shared-1
+
+resource "aws_iam_policy_attachment" "VM-Shared-1-policy-role" {
+  name       = "VM-Shared-1-attachment"
+  roles      = [aws_iam_role.VM-Shared-1-role.name]
+  policy_arn = aws_iam_policy.final_project_access_bucket.arn
+}
+
+resource "aws_iam_isntance_profile" "VM-Shared-1-profile" {
+  name = "VM-Shared-1-profile"
+  role = aws_iam_role.VM-Shared-1-role.name
+}
