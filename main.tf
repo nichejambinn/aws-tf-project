@@ -68,7 +68,7 @@ resource "aws_vpc_peering_connection" "vpc_cxn_shared_dev" {
 # TODO: create SG where VM-Shared-2 and VM-Dev-1 can ping each other
 # ??? this is only a 'partial soln'
 
-# TODO: create S3 bucket and store an image in it
+# create S3 bucket
 resource "aws_s3_bucket" "final_project" {
   bucket = "final_project_bucket"
   acl    = "private"
@@ -77,6 +77,16 @@ resource "aws_s3_bucket" "final_project" {
     Name        = "Bucket_Final_Project"
     Environment = "Dev"
   }
+}
+
+# upload image to the s3 bucket 
+resource "aws_s3_bucket_object" "image" {
+
+  bucket = aws_s3_bucket.final_project.id
+  key    = "profile"
+  acl    = "private"
+  source = "./images/mountain.jpeg"
+  etag   = filemd5("./images/mountain.jpeg")
 }
 
 # TODO: create an IAM role to access the bucket
