@@ -83,10 +83,10 @@ resource "aws_s3_bucket" "image_bucket" {
 }
 
 # upload image to the S3 bucket 
-resource "aws_s3_bucket_object" "mountain_image" {
-  bucket = aws_s3_bucket.image_bucket.id
-  key    = "profile"
-  acl    = "private"
-  source = "./images/mountain.jpeg"
-  etag   = filemd5("./images/mountain.jpeg")
-}
+# resource "aws_s3_bucket_object" "mountain_image" {
+#   bucket = aws_s3_bucket.image_bucket.id
+#   key    = "profile"
+#   acl    = "private"
+#   source = "./images/mountain.jpeg"
+#   etag   = filemd5("./images/mountain.jpeg")
+# }
