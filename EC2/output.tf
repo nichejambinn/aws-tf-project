@@ -1,3 +1,0 @@
-output "webserver" {
-  value = webserver
-}
