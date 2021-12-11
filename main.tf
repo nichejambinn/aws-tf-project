@@ -139,7 +139,9 @@ resource "aws_iam_policy_attachment" "VM-Shared-1-policy-role" {
   policy_arn = aws_iam_policy.final_project_access_bucket.arn
 }
 
-resource "aws_iam_isntance_profile" "VM-Shared-1-profile" {
+resource "aws_iam_instance_profile" "VM-Shared-1-profile" {
   name = "VM-Shared-1-profile"
   role = aws_iam_role.VM-Shared-1-role.name
 }
+
+#assign profile to the instance
