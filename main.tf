@@ -143,5 +143,3 @@ resource "aws_iam_instance_profile" "VM-Shared-1-profile" {
   name = "VM-Shared-1-profile"
   role = aws_iam_role.VM-Shared-1-role.name
 }
-
-#assign profile to the instance
