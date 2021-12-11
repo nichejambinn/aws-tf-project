@@ -50,7 +50,7 @@ resource "aws_vpc_peering_connection" "vpc_cxn_shared_dev" {
   requester {
     allow_remote_vpc_dns_resolution = true
   }
-  
+
   tags = merge(
     var.default_tags,
     {
@@ -60,22 +60,23 @@ resource "aws_vpc_peering_connection" "vpc_cxn_shared_dev" {
   )
 }
 
-# TODO: update route tables to include peered networks
-# !?! see ??? and: "the route tables should not have rules that..." (doc)
+# create updated route tables to include peered networks
+# these will be manually associated with their respective subnets
 resource "aws_route_table" "rt-peer-to-accepter-sn" {
   vpc_id = module.networking["Dev"].vpc_id
   route {
-    cidr_block = local.vpc_envs["Shared"].private_cidrs[1]
+    cidr_block                = local.vpc_envs["Shared"].private_cidrs[1]
     vpc_peering_connection_id = aws_vpc_peering_connection.vpc_cxn_shared_dev.id
   }
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = module.networking["Dev"].vpc_nat_id
   }
+
   tags = merge(
     var.default_tags,
     {
-      Name = "rt-peer-to-accpeter-sn"
+      Name        = "RT-Peer-to-Accepter-SN"
       Environment = "Dev"
     }
   )
@@ -84,40 +85,71 @@ resource "aws_route_table" "rt-peer-to-accepter-sn" {
 resource "aws_route_table" "rt-peer-to-requester-sn" {
   vpc_id = module.networking["Shared"].vpc_id
   route {
-    cidr_block = local.vpc_envs["Dev"].private_cidrs[0]
+    cidr_block                = local.vpc_envs["Dev"].private_cidrs[0]
     vpc_peering_connection_id = aws_vpc_peering_connection.vpc_cxn_shared_dev.id
   }
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = module.networking["Shared"].vpc_nat_id
   }
+
   tags = merge(
     var.default_tags,
     {
-      Name = "rt-peer-to-requester-sn"
+      Name        = "RT-Peer-to-Requester-SN"
       Environment = "Shared"
     }
   )
 }
 
-/*
-resource "aws_route_table_association" "association-shared-to-dev-pr_sn1" {
-  subnet_id = module.networking["Shared"].private_subnets[1].id
-  route_table_id = aws_route_table.rt-peer-to-requester-sn.id
+# create SGs such that VM-Shared-2 and VM-Dev-1 can ping each other
+# these will be manually attached to their respective instances
+resource "aws_security_group" "pcx_vm_sg" {
+  for_each = local.vpc_envs
+
+  name        = "VPC-PCX-${each.key}-VM-SG"
+  description = "VPC Peering Connection ${each.key}-VM SG"
+  vpc_id      = module.networking[each.key].vpc_id
+
+  ingress = []
+
+  egress = [
+    {
+      description = "all outbound is permitted"
+      from_port = 0
+      to_port = 0
+      protocol = "-1"
+      cidr_blocks = ["0.0.0.0/0"]
+      ipv6_cidr_blocks = ["::/0"]
+      prefix_list_ids = []
+      security_groups = []
+      self = null
+    }
+  ]
+
+  tags = merge(
+    var.default_tags,
+    {
+      Name = "VPC-PCX-${each.key}-VM-SG"
+      Environment = "${each.key}"
+    }
+  )
 }
 
-resource "aws_route_table_association" "association-dev-to-shared-pr_sn2" {
-  subnet_id = module.networking["Dev"].private_subnets[0].id
-  route_table_id = aws_route_table.rt-peer-to-accepter-sn.id
+# enable ping
+resource "aws_security_group_rule" "ping_pcx" {
+  for_each = local.vpc_envs
+
+  security_group_id = aws_security_group.pcx_vm_sg[each.key].id
+  type = "ingress"
+  description = "private ping between instances"
+  from_port = -1
+  to_port = -1
+  protocol = "icmp"
+  source_security_group_id = aws_security_group.pcx_vm_sg[each.key == "Shared" ? "Dev" : "Shared"].id
 }
-*/
 
-# TODO: update Shared Bastion host SG to ssh into Dev
-
-# TODO: create SG where VM-Shared-2 and VM-Dev-1 can ping each other
-# ??? this is only a 'partial soln'
-
-# create S3 bucket
+# create S3 bucket for image storage
 resource "aws_s3_bucket" "image_bucket" {
   bucket = "tf-image-group3-project"
   acl    = "private"
@@ -125,7 +157,7 @@ resource "aws_s3_bucket" "image_bucket" {
   tags = merge(
     var.default_tags,
     {
-      Name        = "Bucket-Image-Storage"
+      Name        = "S3-Bucket-Image-Storage"
       Environment = "S3"
     }
   )
