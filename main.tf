@@ -117,8 +117,25 @@ resource "aws_route_table_association" "association-dev-to-shared-pr_sn2" {
 # TODO: create SG where VM-Shared-2 and VM-Dev-1 can ping each other
 # ??? this is only a 'partial soln'
 
-# TODO: create S3 bucket and store an image in it
+# create S3 bucket
+resource "aws_s3_bucket" "image_bucket" {
+  bucket = "tf-image-group3-project"
+  acl    = "private"
 
-# TODO: create an IAM role to access the bucket
+  tags = merge(
+    var.default_tags,
+    {
+      Name        = "Bucket-Image-Storage"
+      Environment = "S3"
+    }
+  )
+}
 
-# TODO: attach the IAM role to VM-Shared-1
+# upload image to the S3 bucket 
+# resource "aws_s3_bucket_object" "mountain_image" {
+#   bucket = aws_s3_bucket.image_bucket.id
+#   key    = "profile"
+#   acl    = "private"
+#   source = "./images/mountain.jpeg"
+#   etag   = filemd5("./images/mountain.jpeg")
+# }
