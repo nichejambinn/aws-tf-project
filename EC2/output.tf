@@ -1,0 +1,3 @@
+output "webserver" {
+  value = webserver
+}
