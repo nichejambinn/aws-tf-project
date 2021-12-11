@@ -68,8 +68,80 @@ resource "aws_vpc_peering_connection" "vpc_cxn_shared_dev" {
 # TODO: create SG where VM-Shared-2 and VM-Dev-1 can ping each other
 # ??? this is only a 'partial soln'
 
-# TODO: create S3 bucket and store an image in it
+# create S3 bucket
+resource "aws_s3_bucket" "final_project" {
+  bucket = "final_project_bucket"
+  acl    = "private"
+
+  tags = {
+    Name        = "Bucket_Final_Project"
+    Environment = "Dev"
+  }
+}
+
+# upload image to the s3 bucket 
+resource "aws_s3_bucket_object" "image" {
+
+  bucket = aws_s3_bucket.final_project.id
+  key    = "profile"
+  acl    = "private"
+  source = "./images/mountain.jpeg"
+  etag   = filemd5("./images/mountain.jpeg")
+}
 
 # TODO: create an IAM role to access the bucket
+resource "aws_iam_policy" "final_project_access_bucket" {
+  name   = "tf_access_bucket"
+  policy = <<EOF
+  {
+    "Version": "2012-10-17",
+    "Statement":[
+      {
+        "Action":[
+          "s3:ListBucket"
+        ],
+        "Effect":"Allow",
+        "Resource": "${aws_s3_bucket.final_project.arn}"
+      },     
+      {
+        "Action":[
+          "s3:GetObject"
+        ],
+        "Effect":"Allow",
+        "Resource": "${aws_s3_bucket.final_project.arn}/*"
+      }
+    ]
+  }
+  EOF
+}
 
-# TODO: attach the IAM role to VM-Shared-1
+resource "aws_iam_role" "VM-Shared-1-role" {
+  name = "VM-Shared-1-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          sevice = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+
+resource "aws_iam_policy_attachment" "VM-Shared-1-policy-role" {
+  name       = "VM-Shared-1-attachment"
+  roles      = [aws_iam_role.VM-Shared-1-role.name]
+  policy_arn = aws_iam_policy.final_project_access_bucket.arn
+}
+
+resource "aws_iam_instance_profile" "VM-Shared-1-profile" {
+  name = "VM-Shared-1-profile"
+  role = aws_iam_role.VM-Shared-1-role.name
+}
+
+#assign profile to the instance
